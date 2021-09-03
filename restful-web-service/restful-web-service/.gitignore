@@ -12,6 +12,7 @@ target/
 .settings
 .springBeans
 .sts4-cache
+application.yml
 
 ### IntelliJ IDEA ###
 .idea
@@ -31,3 +32,7 @@ build/
 
 ### VS Code ###
 .vscode/
+src/main/resources/application.yml
+src/main/resources/static/
+src/main/resources/templates/
+*.application.yml

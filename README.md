@@ -1,2 +1,3 @@
-# Spring_Boot_JPA-Inflearn-Study
-인프런 김영한님 강의 듣고 학습한 내용들입니다
+## 인프런 스프링 강의 정리
+
+- [Spring Boot를 이용한 RESTful Web Service 개발(Dowon Lee)](./restful-web-service/restful-web-service)
