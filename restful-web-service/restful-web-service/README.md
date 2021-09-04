@@ -1,3 +1,4 @@
+## Spring Boot 기본 정보
 ### application.yml VS application.properties
 #### application.yml
 - 설정이름 : 값
@@ -26,7 +27,7 @@ logging.level.org.springframework = debug
 - @Controller + @ResponseBody
 - View를 갖지 않는 REST Data(JSON/XML)를 반환
 
-### 예외처리
+## 예외처리
 ```
 @GetMapping("/users/{id}")
     public User retrieveUser(@PathVariable int id) {
@@ -75,3 +76,68 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
 - UserNotFoundException 예외가 발생했다면 handleUserNotFoundExceptions 메서드가 처리한다. HttpStatus.NOT_FOUND를 반환하므로
 Postman으로 테스트 시 Status 404를 확인할 수 있다
 - 이외 모든 예외는 Exception에 해당하므로 handleAllExceptions 메서드가 처리하여 Status 500을 반환한다
+
+## Validation
+```
+@PostMapping("/users")
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user)
+```
+validation을 시행할 객체에 @Valid를 붙인 후 
+```
+@Data
+@AllArgsConstructor
+public class User {
+
+    private Integer id;
+    @Size(min = 2)
+    private String name;
+    @Past
+    private Date joinDate;
+
+}
+```
+해당 클래스에서 validation 내용을 어노테이션으로 처리하면 된다
+```
+<dependency>
+    <groupId>javax.validation</groupId>
+    <artifactId>validation-api</artifactId>
+    <version>2.0.1.Final</version>
+</dependency>
+<dependency>
+    <groupId>org.hibernate.validator</groupId>
+    <artifactId>hibernate-validator</artifactId>
+    <version>6.0.7.Final</version>
+</dependency>
+```
+스프링 부트 2.3버전 이후로는 해당 dependency를 추가해주어야 한다
+
+```
+@Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+
+        ExceptionResponse exceptionResponse = new ExceptionResponse(new Date(), "Validation Failed", ex.getBindingResult().toString());
+        return new ResponseEntity(exceptionResponse, HttpStatus.BAD_REQUEST);
+    }
+```
+CustomizedResponseEntityExceptionHandler 클래스에 해당 메서드를 추가하고
+```
+@Size(min = 2, message = "Name은 2글자 이상 입력해 주세요")
+    private String name;
+```
+User 클래스에도 message를 추가한다
+
+CustomizedResponseEntityExceptionHandler는 ResponseEntityExceptionHandler를 상속받는데 내부 메서드인 handleMethodArgumentNotValid를
+Override한다. 이 메서드는 validation에서 예외가 발생하면 처리해준다. 
+```
+{
+    "timestamp": "2021-09-04T01:10:56.100+00:00",
+    "message": "Validation Failed",
+    "details": "org.springframework.validation.BeanPropertyBindingResult: 1 errors\nField error in object 'user' on field 'name': rejected value [A]; codes [Size.user.name,Size.name,Size.java.lang.String,Size]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [user.name,name]; arguments []; default message [name],2147483647,2]; default message [반드시 최소값 2과(와) 최대값 2147483647 사이의 크기이어야 합니다.]"
+}
+```
+postman에서 테스트 결과 400-Bad Request와 함께 ExceptionResponse 객체가 잘 출력됨을 알 수 있다
+
+
+
+
