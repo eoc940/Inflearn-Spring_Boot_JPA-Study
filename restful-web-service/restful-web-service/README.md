@@ -138,6 +138,89 @@ Override한다. 이 메서드는 validation에서 예외가 발생하면 처리�
 ```
 postman에서 테스트 결과 400-Bad Request와 함께 ExceptionResponse 객체가 잘 출력됨을 알 수 있다
 
+## Internalization
+
+```
+@SpringBootApplication
+public class RestfulWebServiceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(RestfulWebServiceApplication.class, args);
+	}
+
+	@Bean
+	public LocaleResolver localeResolver() {
+		SessionLocaleResolver localeResolver = new SessionLocaleResolver();
+		localeResolver.setDefaultLocale(Locale.KOREA);
+		return localeResolver;
+	}
+}
+```
+- springboot 어플리케이션에 @Bean을 해놓으면 초기화될때 빈으로 등록된다
+- KOREA를 default locale로 지정한다
+
+```
+greeting.message=안녕하세요
+```
+- messages.properties에 작성된 코드로 다른 국가 메시지도 표현하고 싶다면
+messages_en.properties, message_fr.properties 등으로 만들 수 있다
 
 
+```
+@Autowired
+    private MessageSource messageSource;
+
+@GetMapping(path = "/hello-world-internationalized")
+    public String helloWorldInternationalized(
+            @RequestHeader(name = "Accept-Language", required = false) Locale locale) {
+        return messageSource.getMessage("greeting.message", null, locale);
+    }
+```
+- 컨트로러에 위와 같은 코드를 추가한다
+- MessageSource는 국제화를 제공하는 인터페이스로 각 지역에 맞춘 메시지를 제공할 수 있다
+- @RequestHeader 어노테이션은 HTTP 요청 헤더 값을 컨트롤러 메서드의 파라미터로 전달한다. 헤더가 존재하지 않으면 에러 발생하며
+required를 이용해 필수여부를 설정할 수 있다
+- Postman에서 Accept-Language라는 이름의 키로 en,fr,defualt 등 value를 넣어 보내면 알맞은 메시지를 얻을 수 있다
+
+## Response 데이터
+
+### XML 형식으로 변환
+```
+<dependency>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-xml</artifactId>
+    <version>2.12.3</version>
+</dependency>
+```
+- pom.xml에 위와 같은 디펜던시를 추가한다
+- 요청 헤더에 Accept라는 키에 application/xml이라는 value로 요청을 보내면 xml 형식으로 리턴된다
+
+### Response 데이터 제어 Filtering
+
+기존 User 클래스에 password, ssn 필드를 추가하여 API를 호출했다면
+```
+{
+    "id": 1,
+    "name": "Kenneth",
+    "joinDate": "2021-09-07T06:08:48.686+00:00",
+    "password": "pass1",
+    "ssn": "701010-1111111"
+}
+```
+위와 같은 결과를 리턴받았을 것이다. 만약 password와 ssn이 보이게 하고 싶지 않다면
+```
+@JsonIgnore
+private String password;
+@JsonIgnore
+private String ssn;
+```
+User 클래스 필드에 @JsonIgnore를 붙여준다 
+```
+{
+    "id": 1,
+    "name": "Kenneth",
+    "joinDate": "2021-09-07T06:12:15.345+00:00"
+}
+```
+그러면 이렇게 repsonse 데이터가 필터링된다
 
